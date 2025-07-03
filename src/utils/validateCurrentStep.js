@@ -37,7 +37,8 @@ export function validateCurrentStep(validate) {
 
         if (!date_range.length) {
           alert("Please select date range to proceed further!");
-        } else if(startYear > 2050 || endYear > 2050) { // Custom error to avoid unwanted errors
+          return;
+        } else if(startYear > 2050 || endYear > 2050) { // Custom error to avoid unwanted errors/behaviour
           alert("Selected years must me under 2051");
         } else if (start && start.isBefore(today)) {
           alert("Start date cannot be before today");
@@ -54,3 +55,29 @@ export function validateCurrentStep(validate) {
       break;
   }
 }
+
+//  const [startDate, endDate] = date_range;
+//         const startYear = new Date(startDate).getFullYear();
+//         const endYear = new Date(endDate).getFullYear();
+
+//         const start = new Date(startDate).getTime()
+//         const end = new Date(endDate).getTime();
+
+//         console.log('start: ', startDate, startYear);
+//         console.log('end: ', endDate, endYear);
+
+//         const today = dayjs().startOf("day");
+//         console.log('today: ', today);
+
+//         if (!date_range.length) {
+//           alert("Please select date range to proceed further!");
+//         } else if(startYear > 2050 || endYear > 2050) { // Custom error to avoid unwanted errors/behaviour
+//           alert("Selected years must me under 2051");
+//         } else if (start && start < Date.now()) {
+//           alert("Start date cannot be before today");
+//         } else if (start && end < start) {
+//           alert("End date must be after start date");
+//         } else {
+//           return true;
+//         }
+

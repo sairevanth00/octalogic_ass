@@ -1,54 +1,62 @@
-import { useState } from "react";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import FormControl from "@mui/material/FormControl";
-import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
-import { LocalizationProvider } from "@mui/x-date-pickers-pro/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers-pro/AdapterDayjs";
-import { DateRangePicker } from "@mui/x-date-pickers-pro/DateRangePicker";
+import { useEffect, useRef, useState } from "react";
+import { BASE_URL, BOOKING_STEPS, STORAGE_KEY } from "./constants";
 import {
   validateCurrentStep,
   validateTypes,
 } from "./utils/validateCurrentStep";
 import "./App.css";
-
-const initialFourWheelVehicles = {
-  hatchback: ["Tata Altroz", "Maruti Suzuki Swift", "Tata Tiago"],
-  suv: ["Mahindra Scorpio N", "Mahindra XUV700", "Maruti Suzuki Fronx"],
-  adventure: ["Toyota Fortuner", "Mercedes-AMG G 63", "Jeep Compass"],
-  sedan: ["Maruti Dzire", "Honda City", "Hyundai Verna"],
-  muv: ["Hyundai Verna", "Toyota Innova Crysta", "Kia Carens"],
-};
-
-const initialTwoWheelVehicles = {
-  cruiser: [" Royal Enfield Classic 350", "TVS Ronin", "Honda CB350"],
-  sports: ["Yamaha R15 V4", "TVS Apache RR 310", "BMW G310 RR"],
-  adventure: [
-    "Royal Enfield Himalayan 450",
-    "Yezdi Adventure",
-    "Hero Xpulse 210",
-  ],
-  "commuter motorcycle": [
-    "Yamaha MT 15 V2",
-    "Hero Xtreme 125R",
-    "TVS Raider 125",
-  ],
-  "street bikes": ["TVS Apache RTR 160", "Bajaj Pulsar NS200", "Honda Unicorn"],
-};
+import dayjs from "dayjs";
+import UserDetails from "./components/UserDetails";
+import VehicleWheels from "./components/VehicleWheels";
+import VehicleTypes from "./components/VehicleTypes";
+import VehicleModels from "./components/VehicleModels";
+import DateRange from "./components/DateRange";
+import BookingStatus from "./components/BookingStatus";
 
 function App() {
   const [name, setName] = useState({ firstName: "", lastName: "" });
-  const [vehicleTypes, setVehicleTypes] = useState({
-    2: initialTwoWheelVehicles,
-    4: initialFourWheelVehicles,
-  });
   const [selectedWheelType, setSelectedWheelType] = useState("");
   const [selectedVehicleType, setSelectedVehicleType] = useState("");
-  const [selectedVehicleModel, setSelectedVehicleModel] = useState("");
-  const [vehicles, setVehicles] = useState();
-  const [currentStep, setCurrentStep] = useState("5");
+  const [selectedVehicleModel, setSelectedVehicleModel] = useState({});
+  const [wheelTypes, setWheelTypes] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
+  const [currentStep, setCurrentStep] = useState(null);
   const [dateRange, setDateRange] = useState([]);
+  const [bookingDetails, setBookingDetails] = useState({});
+  const wheelsApiFetchedRef = useRef(false);
+
+  useEffect(() => {
+    let currentStepsFound = localStorage.getItem(STORAGE_KEY);
+    if (currentStepsFound) {
+      const {
+        current_step,
+        no_of_wheels,
+        vehicle_model,
+        vehicle_type,
+        date_range,
+        vehicle_id,
+      } = JSON.parse(currentStepsFound);
+      setBookingDetails(JSON.parse(currentStepsFound));
+      if (current_step) setCurrentStep(String(current_step));
+      if (no_of_wheels) setSelectedWheelType(no_of_wheels);
+      if (vehicle_type) setSelectedVehicleType(vehicle_type);
+      if (vehicle_model)
+        setSelectedVehicleModel({ name: vehicle_model, vehicle_id });
+      if (date_range)
+        setDateRange([
+          dayjs(dayjs(date_range[0]).format("YYYY-MM-DD")),
+          dayjs(dayjs(date_range[1]).format("YYYY-MM-DD")),
+        ]);
+      if (!vehicles.length) getVehilesByWheelType(no_of_wheels);
+    } else {
+      setCurrentStep(BOOKING_STEPS.STEP_1);
+    }
+
+    // To avoid duplicate call in DEV mode.
+    if (wheelsApiFetchedRef.current) return;
+    wheelsApiFetchedRef.current = true;
+    getVehicleWheelTypes();
+  }, []);
 
   const handleNameInputs = (type, value) => {
     setName((prev) => {
@@ -56,264 +64,289 @@ function App() {
     });
   };
 
+  const addUserDetails = async (nextStepVal) => {
+    try {
+      const res = await fetch(`${BASE_URL}/user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(name),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setCurrentStep(String(nextStepVal));
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            ...JSON.parse(localStorage.getItem(STORAGE_KEY)),
+            current_step: nextStepVal,
+            user_id: data.id,
+          })
+        );
+      } else {
+        alert(data.message || "Failed to create user");
+      }
+    } catch (err) {
+      alert(`Something went wrong ${err}`);
+    }
+  };
+
+  const getVehicleWheelTypes = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/vehicle/wheels`);
+      const data = await res.json();
+
+      if (res.ok) {
+        setWheelTypes(data);
+      } else {
+        alert(data.message || "Failed to create user");
+      }
+    } catch (err) {
+      alert(`Something went wrong ${err}`);
+    }
+  };
+
+  const bookVehicle = async (nextStepVal) => {
+    try {
+      const res = await fetch(`${BASE_URL}/vehicle/booking_confirm`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          vehicle_id: selectedVehicleModel.vehicle_id,
+          user_id: JSON.parse(localStorage.getItem(STORAGE_KEY)).user_id,
+          booking_from: dateRange[0].toISOString().split("T")[0],
+          booking_to: dateRange[1].toISOString().split("T")[0],
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setCurrentStep(String(nextStepVal));
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            ...JSON.parse(localStorage.getItem(STORAGE_KEY)),
+            current_step: String(nextStepVal),
+            booking_id: data.booking_id,
+          })
+        );
+        setBookingDetails(JSON.parse(localStorage.getItem(STORAGE_KEY)));
+        alert(data.message || "Booking confirmed successfully!");
+      } else {
+        alert(data.message || "Failed to confirm booking!");
+      }
+    } catch (err) {
+      alert(`Something went wrong ${err}`);
+      setCurrentStep(String(nextStepVal - 1));
+      return;
+    }
+  };
+
   const handleNextStep = (nextStepVal, validateType = null) => {
     let noErrFound = false;
-    if (validateType == validateTypes.NAME) {
-      if (!name.firstName || !name.lastName)
-        return validateCurrentStep({ type: validateType });
-    } else if (validateType == validateTypes.WHEEL_TYPE) {
-      if (!selectedWheelType)
-        return validateCurrentStep({ type: validateType });
-    } else if (validateType == validateTypes.VEHICLE_TYPE) {
-      if (!selectedVehicleType)
-        return validateCurrentStep({ type: validateType });
-    } else if (validateType == validateTypes.VEHICLE_MODEL) {
-      if (!selectedVehicleModel)
-        return validateCurrentStep({ type: validateType });
-    } else if (validateType == validateTypes.DATE_RANGE) {
-
-      console.log(validateType, !dateRange[0], !dateRange[1])
-      // if (dateRange.length < 2)
-      noErrFound = validateCurrentStep({ type: validateType, date_range: dateRange });
-      console.log('noErrFound: ', noErrFound)
-      if(noErrFound) {
-        setCurrentStep(nextStepVal);
+    if (validateType) {
+      if (validateType === validateTypes.NAME) {
+        if (!name.firstName || !name.lastName)
+          return validateCurrentStep({ type: validateType });
+      } else if (validateType === validateTypes.WHEEL_TYPE) {
+        if (!selectedWheelType)
+          return validateCurrentStep({ type: validateType });
+      } else if (validateType === validateTypes.VEHICLE_TYPE) {
+        if (!selectedVehicleType)
+          return validateCurrentStep({ type: validateType });
+      } else if (validateType === validateTypes.VEHICLE_MODEL) {
+        if (!selectedVehicleModel)
+          return validateCurrentStep({ type: validateType });
+      } else if (validateType === validateTypes.DATE_RANGE) {
+        noErrFound = validateCurrentStep({
+          type: validateType,
+          date_range: dateRange,
+        });
+        if (
+          noErrFound &&
+          currentStep !== BOOKING_STEPS.STEP_2 &&
+          currentStep !== BOOKING_STEPS.STEP_6
+        ) {
+          setCurrentStep(String(currentStep));
+        } else {
+          return;
+        }
       } else {
-        return;
+        setCurrentStep(String(currentStep));
       }
     }
-    setCurrentStep(nextStepVal);
+    if (nextStepVal === BOOKING_STEPS.STEP_2) {
+      addUserDetails(nextStepVal);
+    } else if (nextStepVal === BOOKING_STEPS.STEP_5) {
+      let isVehicleAlreadyBooked = vehicles.find(
+        (item) =>
+          item.id === selectedVehicleModel.vehicle_id &&
+          item.booking_status === 1
+      );
+      if (isVehicleAlreadyBooked) {
+        setCurrentStep(String(nextStepVal - 1));
+        alert(
+          "Selected vehicle already booked by other user please select another vehicle"
+        );
+        return;
+      } else {
+        setCurrentStep(String(nextStepVal));
+      }
+    } else if (nextStepVal === BOOKING_STEPS.STEP_6) {
+      bookVehicle(nextStepVal);
+    } else {
+      setCurrentStep(String(nextStepVal));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          ...JSON.parse(localStorage.getItem(STORAGE_KEY)),
+          current_step: String(nextStepVal),
+        })
+      );
+    }
+  };
 
-    console.log("nextStepVal: ", nextStepVal);
-    // TODO validate the current form inputvalues to proceed next step.
+  const getVehilesByWheelType = async (wheelsVal) => {
+    try {
+      const res = await fetch(`${BASE_URL}/vehicle/?no_of_wheels=${wheelsVal}`);
+      const data = await res.json();
+
+      if (res.ok) {
+        setVehicles(data);
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            ...JSON.parse(localStorage.getItem(STORAGE_KEY)),
+            no_of_wheels: wheelsVal,
+          })
+        );
+      } else {
+        alert(data.message || "Failed to fetch vehicles by wheels type");
+      }
+    } catch (err) {
+      alert(`Something went wrong ${err}`);
+    }
   };
 
   const handleWheelChange = (e) => {
     setSelectedWheelType(e.target.value);
+    getVehilesByWheelType(e.target.value);
   };
 
   const handleVehicleType = (e) => {
     setSelectedVehicleType(e.target.value);
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        ...JSON.parse(localStorage.getItem(STORAGE_KEY)),
+        vehicle_type: e.target.value,
+        current_step: String(currentStep),
+      })
+    );
   };
 
   const handleVehicleModel = (e) => {
-    setSelectedVehicleModel(e.target.value);
+    let vehiclesByType = vehicles
+      .filter((item) => item.no_of_wheels === Number(selectedWheelType))
+      .filter((item) => item.vehicle_type === selectedVehicleType);
+
+    let isFound = vehiclesByType.find(
+      (ite) => ite.id === Number(e.target.value)
+    );
+
+    if (isFound) {
+      setSelectedVehicleModel({
+        name: isFound.vehicle_model,
+        vehicle_id: isFound.id,
+      });
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          ...JSON.parse(localStorage.getItem(STORAGE_KEY)),
+          vehicle_model: isFound.vehicle_model,
+          vehicle_id: isFound.id,
+          current_step: String(currentStep),
+        })
+      );
+    }
   };
 
   const handleDateRangeChange = (newValue) => {
     setDateRange(newValue);
-    console.log("Start Date:", newValue[0]?.format("YYYY-MM-DD"));
-    console.log("End Date:", newValue[1]?.format("YYYY-MM-DD"));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        ...JSON.parse(localStorage.getItem(STORAGE_KEY)),
+        date_range: newValue,
+        current_step: String(currentStep),
+      })
+    );
+  };
+
+  const startNewBooking = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setCurrentStep(BOOKING_STEPS.STEP_1);
+    setName({ firstName: "", lastName: "" });
+    setVehicles([])
   };
 
   return (
     <div className="form-container">
-      {currentStep == "1" && (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-          }}
-        >
-          <h2>First, what’s your name?</h2>
-          <label>First Name</label>
-          <input
-            type="text"
-            value={name.firstName}
-            onChange={(e) => handleNameInputs("firstName", e.target.value)}
-          />
-
-          <label>Last Name</label>
-          <input
-            type="text"
-            value={name.lastName}
-            onChange={(e) => handleNameInputs("lastName", e.target.value)}
-          />
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <button
-              className="actionBtn"
-              onClick={() => handleNextStep("2", validateTypes.NAME)}
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {currentStep == BOOKING_STEPS.STEP_1 && (
+        <UserDetails
+          name={name}
+          handleNextStep={handleNextStep}
+          handleNameInputs={handleNameInputs}
+        />
       )}
-      {currentStep == "2" && (
-        <>
-          <FormControl>
-            <h2>Select No of Wheels You Want</h2>
-            <RadioGroup
-              aria-labelledby="demo-radio-buttons-group-label"
-              defaultValue="female"
-              name="radio-buttons-group"
-              onChange={handleWheelChange}
-            >
-              <FormControlLabel
-                value="2"
-                checked={selectedWheelType === "2"}
-                control={<Radio />}
-                label="Two"
-              />
-              <FormControlLabel
-                value="4"
-                checked={selectedWheelType === "4"}
-                control={<Radio />}
-                label="Four"
-              />
-            </RadioGroup>
-          </FormControl>
-          <h4>Selected Weels: {selectedWheelType}</h4>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <button
-              style={{ margin: "10px" }}
-              onClick={() => handleNextStep("1")}
-              className="actionBtn"
-            >
-              Prev
-            </button>
-            <button
-              style={{ margin: "10px" }}
-              onClick={() => handleNextStep("3", validateTypes.WHEEL_TYPE)}
-              className="actionBtn"
-            >
-              Next
-            </button>
-          </div>
-        </>
+      {currentStep === BOOKING_STEPS.STEP_2 && (
+        <VehicleWheels
+          handleWheelChange={handleWheelChange}
+          selectedWheelType={selectedWheelType}
+          wheelTypes={wheelTypes}
+          handleNextStep={handleNextStep}
+        />
       )}
-      {currentStep === "3" && (
-        <>
-          <FormControl>
-            <h2>Type of Vehicle</h2>
-            <RadioGroup
-              aria-labelledby="demo-radio-buttons-group-label"
-              defaultValue="female"
-              name="radio-buttons-group"
-              onChange={handleVehicleType}
-            >
-              {Object.keys(vehicleTypes[selectedWheelType]).map((item) => {
-                let labelValue = item.toUpperCase();
-                return (
-                  <FormControlLabel
-                    key={item}
-                    value={item}
-                    control={<Radio />}
-                    label={labelValue}
-                    checked={selectedVehicleType === item}
-                  />
-                );
-              })}
-            </RadioGroup>
-          </FormControl>
-          <h4>Selected Vehicle Type: {selectedVehicleType}</h4>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <button
-              style={{ margin: "10px" }}
-              onClick={() => handleNextStep("2")}
-              className="actionBtn"
-            >
-              Prev
-            </button>
-            <button
-              style={{ margin: "10px" }}
-              onClick={() => handleNextStep("4", validateTypes.VEHICLE_TYPE)}
-              className="actionBtn"
-            >
-              Next
-            </button>
-          </div>
-        </>
+      {currentStep === BOOKING_STEPS.STEP_3 && (
+        <VehicleTypes
+          handleVehicleType={handleVehicleType}
+          vehicles={vehicles}
+          selectedVehicleType={selectedVehicleType}
+          handleNextStep={handleNextStep}
+        />
       )}
 
-      {currentStep === "4" && (
-        <>
-          <FormControl>
-            <h2>Please Select Specific Vehicle Model</h2>
-            <RadioGroup
-              aria-labelledby="demo-radio-buttons-group-label"
-              defaultValue="female"
-              name="radio-buttons-group"
-              onChange={handleVehicleModel}
-            >
-              {vehicleTypes[selectedWheelType][selectedVehicleType].map(
-                (item) => {
-                  let labelValue = item.toUpperCase();
-                  return (
-                    <FormControlLabel
-                      key={item}
-                      value={item}
-                      control={<Radio />}
-                      label={labelValue}
-                      checked={selectedVehicleModel === item}
-                    />
-                  );
-                }
-              )}
-            </RadioGroup>
-          </FormControl>
-          <h4>Selected Specific Model: {selectedVehicleModel}</h4>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <button
-              style={{ margin: "10px" }}
-              onClick={() => handleNextStep("3")}
-              className="actionBtn"
-            >
-              Prev
-            </button>
-            <button
-              style={{ margin: "10px" }}
-              onClick={() => handleNextStep("5", validateTypes.VEHICLE_MODEL)}
-              className="actionBtn"
-            >
-              Next
-            </button>
-          </div>
-        </>
+      {currentStep === BOOKING_STEPS.STEP_4 && (
+        <VehicleModels
+          handleVehicleModel={handleVehicleModel}
+          vehicles={vehicles}
+          selectedWheelType={selectedWheelType}
+          selectedVehicleType={selectedVehicleType}
+          selectedVehicleModel={selectedVehicleModel}
+          handleNextStep={handleNextStep}
+        />
       )}
 
-      {currentStep === "5" && (
-        <>
-          <h2>Please Select Date Range</h2>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DemoContainer components={["DateRangePicker"]}>
-              <DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
-            </DemoContainer>
-          </LocalizationProvider>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <button
-              style={{ margin: "10px" }}
-              onClick={() => handleNextStep("4")}
-              className="actionBtn"
-            >
-              Prev
-            </button>
-            <button
-              style={{ margin: "10px" }}
-              onClick={() => handleNextStep("6", validateTypes.DATE_RANGE)}
-              className="actionBtn"
-            >
-              Submit
-            </button>
-          </div>
-        </>
+      {currentStep === BOOKING_STEPS.STEP_5 && (
+        <DateRange
+          dateRange={dateRange}
+          handleDateRangeChange={handleDateRangeChange}
+          handleNextStep={handleNextStep}
+        />
       )}
 
-      {currentStep === "6" && (
-        <>
-          <h2> Booking Confirmed</h2>
-          <div>
-            <h3>Details: </h3>
-          </div>
-        </>
+      {currentStep === BOOKING_STEPS.STEP_6 && (
+        <BookingStatus
+          bookingDetails={bookingDetails}
+          startNewBooking={startNewBooking}
+          setBookingDetails={setBookingDetails}
+        />
       )}
     </div>
   );
