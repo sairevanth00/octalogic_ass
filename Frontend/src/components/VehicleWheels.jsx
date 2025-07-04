@@ -4,8 +4,9 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormControl from "@mui/material/FormControl";
+import React from "react";
 
-export default function VehicleWheels({handleWheelChange, selectedWheelType, wheelTypes, handleNextStep}) {
+const VehicleWheels = ({handleWheelChange, selectedWheelType, wheelTypes, handleNextStep})=> {
   return (
     <div
       style={{
@@ -48,3 +49,5 @@ export default function VehicleWheels({handleWheelChange, selectedWheelType, whe
     </div>
   );
 }
+
+export default React.memo(VehicleWheels)

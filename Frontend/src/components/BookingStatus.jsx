@@ -1,23 +1,29 @@
-import dayjs from "dayjs";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { BASE_URL, STORAGE_KEY } from "../constants";
+import dayjs from "dayjs";
 
-export default function BookingStatus({ bookingDetails, startNewBooking, setBookingDetails }) {
+const BookingStatus = ({
+  bookingDetails,
+  startNewBooking,
+  setBookingDetails,
+}) => {
   useEffect(() => {
     const bookingId = JSON.parse(localStorage.getItem(STORAGE_KEY)).booking_id;
     const fetchBookingDetails = async () => {
       try {
-        const res = await fetch( `${BASE_URL}/vehicle/booking_details/${bookingId}`);
+        const res = await fetch(
+          `${BASE_URL}/vehicle/booking_details/${bookingId}`
+        );
         const data = await res.json();
 
         if (res.ok) {
-          console.log('data: ', data)
+          console.log("data: ", data);
           setBookingDetails(data);
         } else {
           alert(data.message || "Failed to create user");
         }
       } catch (err) {
-        console.error((`Something went wrong ${err}`));
+        console.log(`Something went wrong ${err}`);
       }
     };
     fetchBookingDetails();
@@ -74,24 +80,34 @@ export default function BookingStatus({ bookingDetails, startNewBooking, setBook
           <strong>Booking ID: </strong> {bookingDetails.booking_id}
         </p>
         <p>
-          <strong>Vehicle ID: </strong> {bookingDetails.vehicle_id}
+          <strong>User Name: </strong>
+          {`${bookingDetails.first_name} ${bookingDetails.last_name}`}
         </p>
         <p>
-          <strong>User Name: </strong> {bookingDetails.vehicle_id}
+          <strong>Vehicle ID: </strong> {bookingDetails.vehicle_id}
         </p>
+
         <p>
           <strong>Vehicle Model: </strong> {bookingDetails.vehicle_model}
         </p>
         <p>
-          <strong>Vehicle Type: </strong> {bookingDetails.vehicle_type}
+          <strong>Vehicle Type: </strong>{" "}
+          {bookingDetails.vehicle_type.toUpperCase()}
         </p>
         <p>
           <strong>Number of Wheels: </strong> {bookingDetails.no_of_wheels}
         </p>
         <p>
-          <strong>Booked Dates: </strong>{" "}
-          {dayjs(bookingDetails.date_range[0]).format("DD/MM/YYYY")} -{" "}
-          {dayjs(bookingDetails.date_range[1]).format("DD/MM/YYYY")}
+          <strong>Booked Dates: </strong> From{" "}
+          {dayjs(
+            (bookingDetails?.date_range && bookingDetails?.date_range[0]) ||
+              bookingDetails.booking_from
+          ).format("DD/MM/YYYY")}{" "}
+          - To{" "}
+          {dayjs(
+            (bookingDetails?.date_range && bookingDetails?.date_range[1]) ||
+              bookingDetails.booking_to
+          ).format("DD/MM/YYYY")}
         </p>
         <p>
           Click here to start with new booking{" "}
@@ -100,4 +116,6 @@ export default function BookingStatus({ bookingDetails, startNewBooking, setBook
       </div>
     </>
   );
-}
+};
+
+export default React.memo(BookingStatus);

@@ -4,13 +4,14 @@ import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormControl from "@mui/material/FormControl";
 import { BOOKING_STEPS } from "../constants";
+import React from "react";
 
-export default function VehicleTypes({
+const VehicleTypes = ({
   handleVehicleType,
   vehicles,
   selectedVehicleType,
   handleNextStep,
-}) {
+})=> {
   return (
     <>
       <FormControl>
@@ -62,3 +63,5 @@ export default function VehicleTypes({
     </>
   );
 }
+
+export default React.memo(VehicleTypes)

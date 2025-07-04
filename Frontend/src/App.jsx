@@ -290,6 +290,7 @@ function App() {
   };
 
   const startNewBooking = () => {
+    console.log('startNewBooking: ')
     localStorage.removeItem(STORAGE_KEY);
     setCurrentStep(BOOKING_STEPS.STEP_1);
     setName({ firstName: "", lastName: "" });

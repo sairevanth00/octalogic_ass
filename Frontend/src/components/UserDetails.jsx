@@ -1,7 +1,8 @@
+import React from "react";
 import { BOOKING_STEPS, USER_LABELS } from "../constants";
 import { validateTypes } from "../utils/validateCurrentStep";
 
-export default function UserDetails({name, handleNextStep, handleNameInputs}) {
+const UserDetails = ({name, handleNextStep, handleNameInputs})=> {
   return (
     <>
       <h2>First, what’s your name?</h2>
@@ -35,3 +36,5 @@ export default function UserDetails({name, handleNextStep, handleNameInputs}) {
     </>
   );
 }
+
+export default React.memo(UserDetails);

@@ -4,8 +4,9 @@ import { validateTypes } from "../utils/validateCurrentStep";
 import { LocalizationProvider } from "@mui/x-date-pickers-pro/LocalizationProvider";
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
 import { BOOKING_STEPS } from "../constants";
+import React from "react";
 
-export default function DateRange({dateRange, handleDateRangeChange, handleNextStep}) {
+const DateRange = ({dateRange, handleDateRangeChange, handleNextStep})=> {
   return (
     <>
       <h2>Please Select Date Range</h2>
@@ -33,3 +34,5 @@ export default function DateRange({dateRange, handleDateRangeChange, handleNextS
     </>
   );
 }
+
+export default React.memo(DateRange)

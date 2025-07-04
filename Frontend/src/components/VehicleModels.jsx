@@ -4,15 +4,16 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import FormControl from "@mui/material/FormControl";
 import { validateTypes } from "../utils/validateCurrentStep";
 import { BOOKING_STEPS } from "../constants";
+import React from "react";
 
-export default function VehicleModels({
+const VehicleModels = ({
   handleVehicleModel,
   vehicles,
   selectedWheelType,
   selectedVehicleType,
   selectedVehicleModel,
   handleNextStep,
-}) {
+})=> {
   return (
     <>
       <FormControl>
@@ -60,3 +61,5 @@ export default function VehicleModels({
     </>
   );
 }
+
+export default React.memo(VehicleModels);
