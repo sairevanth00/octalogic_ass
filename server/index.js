@@ -16,10 +16,11 @@ connection.connect((err) => {
 
 app.use(cors());
 
+// Handling the CORS policy from frontend URL's
 app.use(cors({
-  origin: 'http://localhost:5173', // your React frontend origin
+  origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true // if you're using cookies or auth headers
+  credentials: true
 }));
 
 const port = 4500;
