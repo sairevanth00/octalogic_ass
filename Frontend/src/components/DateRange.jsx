@@ -9,7 +9,7 @@ import React from "react";
 const DateRange = ({dateRange, handleDateRangeChange, handleNextStep})=> {
   return (
     <>
-      <h2>Please Select Date Range</h2>
+      <h2>Please Select Date Range that you want</h2>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <DemoContainer components={["DateRangePicker"]}>
           <DateRangePicker value={dateRange} onChange={handleDateRangeChange} />

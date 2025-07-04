@@ -51,12 +51,10 @@ const seed = async () => {
       ('2', '4', 'Four');
     `);
 
-
-
-    console.log("✅ Seed data inserted successfully");
+    console.log("Seed data inserted successfully");
     await pool.end();
   } catch (err) {
-    console.error("❌ Failed to seed DB:", err);
+    console.error("Failed to seed DB:", err);
     process.exit(1);
   }
 };

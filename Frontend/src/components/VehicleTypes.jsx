@@ -15,7 +15,7 @@ const VehicleTypes = ({
   return (
     <>
       <FormControl>
-        <h2>Type of Vehicle</h2>
+        <h2>Please select Type of Vehicle</h2>
         <RadioGroup
           aria-labelledby="demo-radio-buttons-group-label"
           defaultValue="female"
