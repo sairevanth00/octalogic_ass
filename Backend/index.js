@@ -1,11 +1,14 @@
 import express from 'express';
-// const express = require('express');
 import connection from './config/dbConnection.js';
 import vehicleRoutes from "./routes/vehicleRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import dotenv from 'dotenv';
 import cors from 'cors';
 
+dotenv.config();
 const app = express();
+
+// Connection to the MY SQL Database
 connection.connect((err) => {
   if (err) {
     console.error('Error connecting to MySQL:', err);
@@ -23,11 +26,11 @@ app.use(cors({
   credentials: true
 }));
 
-const port = 4500;
-
+const port = process.env.PORT || 5000;
 app.listen(port, () => {
   console.log(`Server is running at port ${port}`);
 });
+
 app.use(express.json());
 app.use("/api/vehicle", vehicleRoutes);
 app.use("/api/user", userRoutes)

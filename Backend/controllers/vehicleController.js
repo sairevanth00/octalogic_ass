@@ -117,7 +117,6 @@ const postBookingDetails = asyncHandler(async (req, res) => {
  */
 const getBookingDetails = asyncHandler(async (req, res) => {
   const bookingId = req.params.id;
-  console.log("bookingId: ", bookingId);
   const query = `
     SELECT 
       b.booking_id,
@@ -139,12 +138,11 @@ const getBookingDetails = asyncHandler(async (req, res) => {
 
   try {
     const [rows] = await pool.query(query, [bookingId]);
-    console.log("rows: ", rows);
 
     if (rows.length === 0) {
       res.status(404).json({ message: "Booking not found" });
     } else {
-      res.status(200).json(rows[0]); // return the first match
+      res.status(200).json(rows[0]);
     }
   } catch (err) {
     console.error("Error fetching booking details:", err);

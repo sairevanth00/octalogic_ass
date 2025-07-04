@@ -290,65 +290,64 @@ function App() {
   };
 
   const startNewBooking = () => {
-    console.log('startNewBooking: ')
     localStorage.removeItem(STORAGE_KEY);
     setCurrentStep(BOOKING_STEPS.STEP_1);
+    setSelectedWheelType("");
     setName({ firstName: "", lastName: "" });
-    setVehicles([])
+    setVehicles([]);
   };
 
-  return (
-    <div className="form-container">
-      {currentStep == BOOKING_STEPS.STEP_1 && (
-        <UserDetails
+  const renderBookingSteps = (currentStep) => {
+    switch (currentStep) {
+      case BOOKING_STEPS.STEP_1:
+        return <UserDetails
           name={name}
           handleNextStep={handleNextStep}
           handleNameInputs={handleNameInputs}
-        />
-      )}
-      {currentStep === BOOKING_STEPS.STEP_2 && (
-        <VehicleWheels
+        />;
+      case BOOKING_STEPS.STEP_2:
+        return <VehicleWheels
           handleWheelChange={handleWheelChange}
           selectedWheelType={selectedWheelType}
           wheelTypes={wheelTypes}
           handleNextStep={handleNextStep}
-        />
-      )}
-      {currentStep === BOOKING_STEPS.STEP_3 && (
-        <VehicleTypes
+        />;
+      case BOOKING_STEPS.STEP_3:
+        return <VehicleTypes
           handleVehicleType={handleVehicleType}
           vehicles={vehicles}
           selectedVehicleType={selectedVehicleType}
           handleNextStep={handleNextStep}
-        />
-      )}
-
-      {currentStep === BOOKING_STEPS.STEP_4 && (
-        <VehicleModels
+        />;
+      case BOOKING_STEPS.STEP_4:
+        return <VehicleModels
           handleVehicleModel={handleVehicleModel}
           vehicles={vehicles}
           selectedWheelType={selectedWheelType}
           selectedVehicleType={selectedVehicleType}
           selectedVehicleModel={selectedVehicleModel}
           handleNextStep={handleNextStep}
-        />
-      )}
-
-      {currentStep === BOOKING_STEPS.STEP_5 && (
-        <DateRange
+        />;
+      case BOOKING_STEPS.STEP_5:
+        return <DateRange
           dateRange={dateRange}
           handleDateRangeChange={handleDateRangeChange}
           handleNextStep={handleNextStep}
-        />
-      )}
-
-      {currentStep === BOOKING_STEPS.STEP_6 && (
-        <BookingStatus
+        />;
+      case BOOKING_STEPS.STEP_6:
+        return <BookingStatus
           bookingDetails={bookingDetails}
           startNewBooking={startNewBooking}
           setBookingDetails={setBookingDetails}
-        />
-      )}
+        />;
+      default:
+        return <h2>Invalid Step</h2>;
+    }
+  };
+
+  return (
+    <div className="form-container">
+      {renderBookingSteps(currentStep)}
     </div>
   );
 }
